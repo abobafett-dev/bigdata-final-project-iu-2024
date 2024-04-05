@@ -1,0 +1,10 @@
+SELECT * FROM main LIMIT 10;
+SELECT * FROM stores LIMIT 10;
+SELECT * FROM oil LIMIT 10;
+SELECT * FROM transactions LIMIT 10;
+SELECT * FROM holidays_events LIMIT 10;
+SELECT COUNT(*) FROM main;
+SELECT COUNT(*) FROM stores;
+SELECT COUNT(*) FROM oil;
+SELECT COUNT(*) FROM transactions;
+SELECT COUNT(*) FROM holidays_events;
