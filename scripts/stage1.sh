@@ -14,3 +14,7 @@ hdfs dfs -rm -R -skipTrash project/warehouse/*
 
 # Compress data and put it inside HDFS
 sqoop import-all-tables --connect jdbc:postgresql://hadoop-04.uni.innopolis.ru/team7_projectdb --username team7 --password $password --compression-codec=snappy --compress --as-avrodatafile --warehouse-dir=project/warehouse --m 1
+
+# Move all java and avsc files to output
+mv *.java output/
+mv *.avsc output/
