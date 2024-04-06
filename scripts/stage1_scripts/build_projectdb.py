@@ -12,7 +12,7 @@ with open(file, "r", encoding="UTF-8") as file:
 
 
 # build connection string
-conn_string = f"host=hadoop-04.uni.innopolis.ru port=5432 user=team7\
+conn_string = f"host=hadoop-04.uni.innopolis.ru port=5432 user=team7 \
 dbname=team7_projectdb password={password}"
 
 
