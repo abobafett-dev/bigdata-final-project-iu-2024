@@ -1,9 +1,9 @@
-USE teamx_projectdb;
+USE team7_projectdb;
 
 DROP TABLE IF EXISTS q1_results;
 CREATE EXTERNAL TABLE q1_results(
-                                    Dname STRING,
-                                    Total_Salaries FLOAT)
+                                    store_nbr INT,
+                                    sales FLOAT)
     ROW FORMAT DELIMITED
         FIELDS TERMINATED BY ','
     location 'project/hive/warehouse/q1';
@@ -12,12 +12,10 @@ CREATE EXTERNAL TABLE q1_results(
 SET hive.resultset.use.unique.column.names = false;
 
 INSERT INTO q1_results
-SELECT dname,
-       SUM(sal) AS total_sal
-FROM departments AS d
-         JOIN employees AS e ON d.deptno = e.deptno
-GROUP BY dname
-ORDER BY total_sal DESC
-LIMIT 10;
+SELECT store_nbr, sales AS sales
+FROM main_part;
 
+INSERT OVERWRITE DIRECTORY 'project/output/q1'
+    ROW FORMAT DELIMITED FIELDS
+    TERMINATED BY ','
 SELECT * FROM q1_results;

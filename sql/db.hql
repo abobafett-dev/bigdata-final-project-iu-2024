@@ -30,8 +30,19 @@ SELECT * FROM holidays_events LIMIT 10;
 SET hive.exec.dynamic.partition=true;
 SET hive.exec.dynamic.partition.mode=nonstrict;
 
-CREATE EXTERNAL TABLE IF NOT EXISTS main_part(ID int, dates DATE, family varchar(30), sales float, onpromotion int) PARTITIONED BY (store_nbr int) STORED AS AVRO LOCATION 'project/hive/warehouse/main_part' TBLPROPERTIES ('AVRO.COMPRESS'='SNAPPY');
+CREATE EXTERNAL TABLE IF NOT EXISTS main_part(
+    ID int,
+    dates DATE,
+    family varchar(30),
+    sales float,
+    onpromotion int)
+PARTITIONED BY (store_nbr int)
+STORED AS AVRO LOCATION 'project/hive/warehouse/main_part'
+TBLPROPERTIES ('AVRO.COMPRESS'='SNAPPY');
 
-INSERT INTO main_part partition (store_nbr) SELECT ID, dates, family, sales, onpromotion, store_nbr FROM main;
+INSERT INTO main_part
+PARTITION (store_nbr)
+SELECT ID, to_date(from_unixtime(FLOOR(CAST(dates AS BIGINT)/1000), 'yyyy-MM-dd HH:mm:ss.SSS')) as dates, family, sales, onpromotion, store_nbr
+FROM main;
 
 DROP TABLE main;
