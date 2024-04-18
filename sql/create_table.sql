@@ -1,3 +1,11 @@
+--drop tables
+DROP TABLE IF EXISTS stores CASCADE;
+DROP TABLE IF EXISTS main;
+DROP TABLE IF EXISTS oil;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS holidays_events;
+
+
 START TRANSACTION;
 
 
@@ -14,7 +22,7 @@ CREATE TABLE IF NOT EXISTS stores(
 --train data
 CREATE TABLE IF NOT EXISTS main(
                                    id INTEGER NOT NULL PRIMARY KEY,
-                                   "date" DATE NOT NULL,
+                                   dates DATE NOT NULL,
                                    store_nbr INTEGER NOT NULL REFERENCES stores(store_nbr),
                                    family VARCHAR (30) NOT NULL,
                                    sales REAL NOT NULL,
@@ -25,7 +33,7 @@ CREATE TABLE IF NOT EXISTS main(
 --oil
 CREATE TABLE IF NOT EXISTS oil(
                                   id SERIAL NOT NULL PRIMARY KEY,
-                                  "date" DATE NOT NULL,
+                                  dates DATE NOT NULL,
                                   dcoilwtico REAL
 );
 
@@ -33,7 +41,7 @@ CREATE TABLE IF NOT EXISTS oil(
 --transactions
 CREATE TABLE IF NOT EXISTS transactions(
                                            id SERIAL NOT NULL PRIMARY KEY,
-                                           date DATE NOT NULL,
+                                           dates DATE NOT NULL,
                                            store_nbr INTEGER NOT NULL REFERENCES stores(store_nbr),
                                            transactions INTEGER NOT NULL
 );
@@ -42,7 +50,7 @@ CREATE TABLE IF NOT EXISTS transactions(
 --holidays_events
 CREATE TABLE IF NOT EXISTS holidays_events(
                                               id SERIAL NOT NULL PRIMARY KEY,
-                                              date DATE NOT NULL,
+                                              dates DATE NOT NULL,
                                               type VARCHAR (20) NOT NULL,
                                               locale VARCHAR (10) NOT NULL,
                                               locale_name VARCHAR (40) NOT NULL,
