@@ -240,3 +240,4 @@ fabric.properties
 data/*.csv
 sandbox/
 secrets/*
+output/*.png
