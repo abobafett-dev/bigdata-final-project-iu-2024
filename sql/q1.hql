@@ -2,7 +2,7 @@ USE team7_projectdb;
 
 DROP TABLE IF EXISTS q1_results;
 CREATE EXTERNAL TABLE q1_results(
-                                    store_nbr INT,
+                                    family VARCHAR(30),
                                     sales FLOAT)
     ROW FORMAT DELIMITED
         FIELDS TERMINATED BY ','
@@ -12,7 +12,7 @@ CREATE EXTERNAL TABLE q1_results(
 SET hive.resultset.use.unique.column.names = false;
 
 INSERT INTO q1_results
-SELECT store_nbr, sales AS sales
+SELECT family, sales
 FROM main_part;
 
 INSERT OVERWRITE DIRECTORY 'project/output/q1'

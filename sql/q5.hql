@@ -2,10 +2,9 @@ USE team7_projectdb;
 
 DROP TABLE IF EXISTS q5_results;
 CREATE EXTERNAL TABLE q5_results(
-                                    dates DATE,
-                                    type VARCHAR(20),
-                                    locale VARCHAR(10),
-                                    avg_sales FLOAT)
+                                    day_type VARCHAR(10),
+                                    family VARCHAR(30),
+                                    sales FLOAT)
     ROW FORMAT DELIMITED
         FIELDS TERMINATED BY ','
     location 'project/hive/warehouse/q5';
@@ -14,11 +13,12 @@ CREATE EXTERNAL TABLE q5_results(
 SET hive.resultset.use.unique.column.names = false;
 
 INSERT INTO q5_results
-SELECT m.dates, h.type, h.locale, AVG(m.sales) AS avg_sales
-FROM main_part as m
-         JOIN holidays_events as h ON m.dates == h.dates
-GROUP BY m.dates, h.type, h.locale
-ORDER BY avg_sales DESC;
+SELECT
+    CASE WHEN he.type = 'Holiday' AND he.transferred = FALSE THEN 'Workday' ELSE 'Holiday' END AS day_type,
+    m.family,
+    m.sales
+FROM main_part AS m
+         JOIN holidays_events AS he ON m.dates = he.dates;
 
 INSERT OVERWRITE DIRECTORY 'project/output/q5'
     ROW FORMAT DELIMITED FIELDS

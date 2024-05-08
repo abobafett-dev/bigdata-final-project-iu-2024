@@ -2,7 +2,7 @@ USE team7_projectdb;
 
 DROP TABLE IF EXISTS q2_results;
 CREATE EXTERNAL TABLE q2_results(
-                                    family VARCHAR(30),
+                                    day INT,
                                     sales FLOAT)
     ROW FORMAT DELIMITED
         FIELDS TERMINATED BY ','
@@ -12,7 +12,7 @@ CREATE EXTERNAL TABLE q2_results(
 SET hive.resultset.use.unique.column.names = false;
 
 INSERT INTO q2_results
-SELECT family, sales AS sales
+SELECT DAY(dates) as day, sales
 FROM main_part;
 
 INSERT OVERWRITE DIRECTORY 'project/output/q2'
