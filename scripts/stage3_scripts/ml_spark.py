@@ -1,6 +1,5 @@
 """Main sparkML script"""
 
-import os
 import math
 from pyspark.sql import SparkSession
 from pyspark.ml import Pipeline
@@ -17,14 +16,14 @@ TEAM = "team7"
 # location of your Hive database in HDFS
 WAREHOUSE = "project/hive/warehouse"
 
-spark = SparkSession.builder\
-    .appName(f"{TEAM} - spark ML")\
-    .master("yarn")\
-    .config("spark.executor.instances", 8)\
-    .config("hive.metastore.uris", "thrift://hadoop-02.uni.innopolis.ru:9883")\
-    .config("spark.sql.warehouse.dir", WAREHOUSE)\
-    .config("spark.sql.avro.compression.codec", "snappy")\
-    .enableHiveSupport()\
+spark = SparkSession.builder \
+    .appName(f"{TEAM} - spark ML") \
+    .master("yarn") \
+    .config("spark.executor.instances", 8) \
+    .config("hive.metastore.uris", "thrift://hadoop-02.uni.innopolis.ru:9883") \
+    .config("spark.sql.warehouse.dir", WAREHOUSE) \
+    .config("spark.sql.avro.compression.codec", "snappy") \
+    .enableHiveSupport() \
     .getOrCreate()
 
 sc = spark.sparkContext
@@ -69,7 +68,7 @@ transformed = main \
     .join(oil, on="dates", how="left") \
     .join(transactions, on=["dates", "store_nbr"], how="left") \
     .join(stores, on="store_nbr", how="left") \
-
+ \
 # Split dates to year, month, day
 transformed = transformed \
     .withColumn("year", date_format("dates", "yyyy").cast('int')) \
@@ -101,31 +100,19 @@ transformed = transformed.select(["sales", "features"]).withColumnRenamed("sales
 train_data = transformed.limit(int(transformed.count() * 0.8))
 test_data = transformed.subtract(train_data)
 
-
-def run(command):
-    """Function to run commands"""
-    return os.popen(command).read()
-
-
-train_data.select("features", "label")\
-    .coalesce(1)\
-    .write\
-    .mode("overwrite")\
-    .format("json")\
+train_data.select("features", "label") \
+    .coalesce(1) \
+    .write \
+    .mode("overwrite") \
+    .format("json") \
     .save("project/data/train")
 
-# Run it from root directory of the repository
-run("hdfs dfs -cat project/data/train/*.json > data/train.json")
-
-test_data.select("features", "label")\
-    .coalesce(1)\
-    .write\
-    .mode("overwrite")\
-    .format("json")\
+test_data.select("features", "label") \
+    .coalesce(1) \
+    .write \
+    .mode("overwrite") \
+    .format("json") \
     .save("project/data/test")
-
-# Run it from root directory of the repository
-run("hdfs dfs -cat project/data/test/*.json > data/test.json")
 
 # Create Linear Regression Model
 lr = LinearRegression()
@@ -133,10 +120,10 @@ lr = LinearRegression()
 
 def pred_cut(pred):
     """Function to cut predictions below 0"""
-    return pred\
+    return pred \
         .withColumn("prediction", when(
-            pred.prediction < 0, 0
-                          )
+        pred.prediction < 0, 0
+    )
                     .otherwise(pred.prediction))
 
 
@@ -162,9 +149,9 @@ rmse = evaluator1_rmse.evaluate(predictions)
 r2 = evaluator1_r2.evaluate(predictions)
 
 grid = ParamGridBuilder()
-grid = grid.addGrid(model_lr.aggregationDepth, [2, 3, 4])\
-           .addGrid(model_lr.loss, ["squaredError", "huber"])\
-           .build()
+grid = grid.addGrid(model_lr.aggregationDepth, [2, 3, 4]) \
+    .addGrid(model_lr.loss, ["squaredError", "huber"]) \
+    .build()
 
 cv = CrossValidator(estimator=lr,
                     estimatorParamMaps=grid,
@@ -179,28 +166,22 @@ model1 = bestModel
 
 model1.write().overwrite().save("project/models/model1")
 
-# Run it from root directory of the repository
-run("hdfs dfs -get project/models/model1 models/model1")
-
 predictions = model1.transform(test_data)
 predictions = pred_cut(predictions)
 
-predictions.select("label", "prediction")\
-    .coalesce(1)\
-    .write\
-    .mode("overwrite")\
-    .format("csv")\
-    .option("sep", ",")\
-    .option("header", "true")\
+predictions.select("label", "prediction") \
+    .coalesce(1) \
+    .write \
+    .mode("overwrite") \
+    .format("csv") \
+    .option("sep", ",") \
+    .option("header", "true") \
     .save("project/output/model1_predictions.csv")
-
-# Run it from root directory of the repository
-run("hdfs dfs -cat project/output/model1_predictions.csv/*.csv > output/model1_predictions.csv")
 
 rmse1 = evaluator1_rmse.evaluate(predictions)
 r21 = evaluator1_r2.evaluate(predictions)
 
-# Create GBT Model
+# Create Linear Regression Model
 gbt = GBTRegressor(maxBins=4993, seed=42)
 
 # Fit the data to the pipeline stages
@@ -236,28 +217,22 @@ model2 = bestModel
 
 model2.write().overwrite().save("project/models/model2")
 
-# Run it from root directory of the repository
-run("hdfs dfs -get project/models/model2 models/model2")
-
 predictions = model2.transform(test_data)
 predictions = pred_cut(predictions)
 
-predictions.select("label", "prediction")\
-    .coalesce(1)\
-    .write\
-    .mode("overwrite")\
-    .format("csv")\
-    .option("sep", ",")\
-    .option("header", "true")\
+predictions.select("label", "prediction") \
+    .coalesce(1) \
+    .write \
+    .mode("overwrite") \
+    .format("csv") \
+    .option("sep", ",") \
+    .option("header", "true") \
     .save("project/output/model2_predictions.csv")
-
-# Run it from root directory of the repository
-run("hdfs dfs -cat project/output/model2_predictions.csv/*.csv > output/model2_predictions.csv")
 
 rmse2 = evaluator2_rmse.evaluate(predictions)
 r22 = evaluator2_r2.evaluate(predictions)
 
-# Create Random Forest Model
+# Create Linear Regression Model
 rfr = RandomForestRegressor(maxBins=4993, seed=42)
 model_rfr = gbt.fit(train_data)
 
@@ -276,10 +251,13 @@ evaluator3_r2 = RegressionEvaluator(
     metricName="r2"
 )
 
+rmse3 = evaluator3_rmse.evaluate(predictions)
+r23 = evaluator3_r2.evaluate(predictions)
+
 grid = ParamGridBuilder()
-grid = grid\
-    .addGrid(model_rfr.maxDepth, [2, 5])\
-    .addGrid(model_rfr.lossType, ['squared', 'absolute'])\
+grid = grid \
+    .addGrid(model_rfr.maxDepth, [2, 5]) \
+    .addGrid(model_rfr.lossType, ['squared', 'absolute']) \
     .build()
 
 cv = CrossValidator(estimator=rfr,
@@ -294,23 +272,17 @@ bestModel = cvModel.bestModel
 model3 = bestModel
 model3.write().overwrite().save("project/models/model3")
 
-# Run it from root directory of the repository
-run("hdfs dfs -get project/models/model3 models/model3")
-
 predictions = model3.transform(test_data)
 predictions = pred_cut(predictions)
 
-predictions.select("label", "prediction")\
-    .coalesce(1)\
-    .write\
-    .mode("overwrite")\
-    .format("csv")\
-    .option("sep", ",")\
-    .option("header", "true")\
+predictions.select("label", "prediction") \
+    .coalesce(1) \
+    .write \
+    .mode("overwrite") \
+    .format("csv") \
+    .option("sep", ",") \
+    .option("header", "true") \
     .save("project/output/model3_predictions.csv")
-
-# Run it from root directory of the repository
-run("hdfs dfs -cat project/output/model3_predictions.csv/*.csv > output/model3_predictions.csv")
 
 rmse3 = evaluator3_rmse.evaluate(predictions)
 r23 = evaluator3_r2.evaluate(predictions)
@@ -319,13 +291,10 @@ models = [[str(model1), rmse1, r21], [str(model2), rmse2, r22], [str(model3), rm
 
 df = spark.createDataFrame(models, ["model", "RMSE", "R2"])
 
-df.coalesce(1)\
-    .write\
-    .mode("overwrite")\
-    .format("csv")\
-    .option("sep", ",")\
-    .option("header", "true")\
+df.coalesce(1) \
+    .write \
+    .mode("overwrite") \
+    .format("csv") \
+    .option("sep", ",") \
+    .option("header", "true") \
     .save("project/output/evaluation.csv")
-
-# Run it from root directory of the repository
-run("hdfs dfs -cat project/output/evaluation.csv/*.csv > output/evaluation.csv")
