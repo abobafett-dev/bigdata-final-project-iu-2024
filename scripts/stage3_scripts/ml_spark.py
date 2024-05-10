@@ -73,11 +73,10 @@ transformed = main \
 transformed = transformed \
     .withColumn("year", date_format("dates", "yyyy").cast('int')) \
     .withColumn("month", date_format("dates", "MM").cast('int')) \
-    .withColumn("day", date_format("dates", "dd").cast('int')) \
-    .drop("dates")
+    .withColumn("day", date_format("dates", "dd").cast('int'))
 
 # Sort dataframe by date
-transformed = transformed.sort(["year", "month", "day"])
+transformed = transformed.sort(["dates"])
 
 # Fill na
 transformed = transformed.fillna(0)
@@ -90,11 +89,11 @@ transformed = transformed.withColumn("day_cos", cos(2 * math.pi * transformed.da
 transformed = transformed.drop(*["month", "day"])
 
 # Assemble all features into single column
-input_cols = [i for i in transformed.schema.names if i != "sales"]
+input_cols = [i for i in transformed.schema.names if i != "sales" and i != "dates"]
 assembler = VectorAssembler(inputCols=input_cols, outputCol="features")
 pipeline = Pipeline(stages=[assembler])
 transformed = pipeline.fit(transformed).transform(transformed)
-transformed = transformed.select(["sales", "features"]).withColumnRenamed("sales", "label")
+transformed = transformed.select(["sales", "features", "dates"]).withColumnRenamed("sales", "label")
 
 # Split the data to train/test 80/20
 train_data = transformed.limit(int(transformed.count() * 0.8))
@@ -169,7 +168,7 @@ model1.write().overwrite().save("project/models/model1")
 predictions = model1.transform(test_data)
 predictions = pred_cut(predictions)
 
-predictions.select("label", "prediction") \
+predictions.select("label", "prediction", "dates") \
     .coalesce(1) \
     .write \
     .mode("overwrite") \
@@ -202,7 +201,10 @@ evaluator2_r2 = RegressionEvaluator(
 )
 
 grid = ParamGridBuilder()
-grid = grid.addGrid(model_gbt.maxIter, [10, 100, 500]).build()
+grid = grid \
+    .addGrid(model_gbt.maxDepth, [2, 5]) \
+    .addGrid(model_gbt.lossType, ['squared', 'absolute']) \
+    .build()
 
 cv = CrossValidator(estimator=gbt,
                     estimatorParamMaps=grid,
@@ -220,7 +222,7 @@ model2.write().overwrite().save("project/models/model2")
 predictions = model2.transform(test_data)
 predictions = pred_cut(predictions)
 
-predictions.select("label", "prediction") \
+predictions.select("label", "prediction", "dates") \
     .coalesce(1) \
     .write \
     .mode("overwrite") \
@@ -251,9 +253,6 @@ evaluator3_r2 = RegressionEvaluator(
     metricName="r2"
 )
 
-rmse3 = evaluator3_rmse.evaluate(predictions)
-r23 = evaluator3_r2.evaluate(predictions)
-
 grid = ParamGridBuilder()
 grid = grid \
     .addGrid(model_rfr.maxDepth, [2, 5]) \
@@ -275,7 +274,7 @@ model3.write().overwrite().save("project/models/model3")
 predictions = model3.transform(test_data)
 predictions = pred_cut(predictions)
 
-predictions.select("label", "prediction") \
+predictions.select("label", "prediction", "dates") \
     .coalesce(1) \
     .write \
     .mode("overwrite") \
@@ -287,7 +286,9 @@ predictions.select("label", "prediction") \
 rmse3 = evaluator3_rmse.evaluate(predictions)
 r23 = evaluator3_r2.evaluate(predictions)
 
-models = [[str(model1), rmse1, r21], [str(model2), rmse2, r22], [str(model3), rmse3, r23]]
+models = [["LinearRegression", rmse1, r21],
+          ["GBTRegressor", rmse2, r22],
+          ["RandomForestRegressor", rmse3, r23]]
 
 df = spark.createDataFrame(models, ["model", "RMSE", "R2"])
 
